@@ -1,0 +1,167 @@
+#ifndef CONSOLE_H
+#define CONSOLE_H
+
+#include <QTextStream>
+
+#include <QThread>
+#include <QDebug>
+
+class Reader : public QObject{
+    Q_OBJECT
+public slots:
+    void doRead(){
+        QTextStream s(stdin);
+        const QString line = s.readLine();
+        //qDebug() << line;
+        //char buffer[64 * 1024];
+        //const auto r = fgets(buffer, sizeof(buffer), stdin);
+        //QString line(r);
+        emit read(line);
+    }
+signals:
+    void read(const QString &string);
+    QTextStream
+};
+
+class Console : public QObject{
+    Q_OBJECT
+public:
+    Console(FILE* source, QObject* parent = nullptr) : QObject(parent){
+        Reader* reader = new Reader(source);
+        reader->moveToThread(&m_thread);
+        QObject::connect(&m_thread, &QThread::finished, reader, &QObject::deleteLater);
+        QObject::connect(reader, &Reader::read, this, [this](const QString& line){
+            if(!line.isEmpty())
+                emit read(line);
+            emit requestRead();
+        });
+        QObject::connect(this, &Console::requestRead, reader, &Reader::doRead);
+        m_thread.start();
+        emit requestRead();
+    }
+    ~Console(){
+        m_thread.quit();
+        m_thread.wait();
+    }
+signals:
+    void requestRead();
+    void read(const QString& string);
+private:
+    QThread m_thread;
+};
+
+#if 0
+#define USE_TIMER
+
+#ifdef Q_OS_WIN
+//Include order matters here
+#include <winsock2.h>
+static inline int poll( struct pollfd *pfd, int nfds, int timeout) {
+    return WSAPoll ( pfd, nfds, timeout );
+}
+#else
+#include <poll.h>
+#endif
+
+
+#ifdef USE_TIMER
+#include <QTimer>
+#else
+#ifdef Q_OS_WIN
+#include <QWinEventNotifier>
+#include <windows.h>
+#else
+#include <QSocketNotifier>
+#endif
+#endif
+
+
+#include <QDebug>
+
+
+class Console : public QObject{
+    Q_OBJECT
+public:
+    Console(QObject* parent = nullptr) : QObject(parent)
+#ifdef USE_TIMER
+    {
+        m_timer.start(200);
+        QObject::connect(&m_timer, &QTimer::timeout, [this]()
+#else
+      , m_notifier(
+#ifdef Q_OS_WIN
+    new QWinEventNotifier(GetStdHandle(STD_INPUT_HANDLE))
+#else
+    new QSocketNotifier(fileno(stdin), QSocketNotifier::Read, this)
+#endif
+), m_stream(stdin){
+        QObject::connect(m_notifier.data(),
+#ifdef Q_OS_WIN
+    &QWinEventNotifier::activated, this, [this](HANDLE)
+#else
+    &QSocketNotifier::activated, this, [this](int)
+#endif
+#endif
+                         {
+
+#ifdef Q_OS_WIN
+
+#endif
+            QString line;
+            for(;;){
+                struct pollfd pfds;
+                pfds.fd = 0;
+                pfds.events = POLLIN;
+                const auto hasData = poll(&pfds, 1, 0);
+                if(hasData <= 0)
+                    break;
+                char buffer[16];
+                const auto r = fgets(buffer, sizeof(buffer), stdin);
+                if(!r)
+                    break;
+                char* ptr = buffer;
+                for(unsigned i = 0; i < sizeof(buffer); i++) {
+                    if(buffer[i] == '\0'){
+                        line.append(ptr);
+                        break;
+                    }
+                    if(buffer[i] == '\n'){
+                        buffer[i] = '\0';
+                        line.append(ptr);
+                        ptr = buffer + i;
+                    }
+                    if(buffer[i] == '\r'){
+                        buffer[i] = '\0';
+                        line.append(ptr);
+                        ptr = buffer + i;
+                    }
+                    while(*ptr == '\n' || *ptr == '\r'){
+                        ++ptr;
+                        ++i;
+                        }
+                }
+            }
+
+            if(!line.isEmpty())
+                emit read(line);
+
+        });
+    }
+signals:
+    void quit();
+    void read(const QString& string);
+private:
+#ifdef USE_TIMER
+    QTimer m_timer;
+#else
+#ifdef Q_OS_WIN
+    QScopedPointer<QWinEventNotifier>
+#else
+    QScopedPointer<QSocketNotifier>
+#endif
+    m_notifier;
+#endif
+};
+
+#endif // CONSOLE_H
+#endif
