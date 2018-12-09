@@ -14,13 +14,14 @@ INCLUDEPATH += \
 
 DEPENDPATH += $$PWD/../../../lib
 
-win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$shadowed($$PWD)/release/libAxq.a
-else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$shadowed($$PWD)/debug/libAxq.a
-else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$shadowed($$PWD)/release/Axq.lib
-else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$shadowed($$PWD)/debug/Axq.lib
-else:unix:!macx: PRE_TARGETDEPS += $$shadowed($$PWD)/libAxq.so
-else:macx:PRE_TARGETDEPS += $$shadowed($$PWD)/libAxq.dylib
-else: error(Not defined)
-
+dynlink{
+    win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$shadowed($$PWD)/release/libAxq.a
+    else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$shadowed($$PWD)/debug/libAxq.a
+    else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$shadowed($$PWD)/release/Axq.lib
+    else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$shadowed($$PWD)/debug/Axq.lib
+    else:unix:!macx: PRE_TARGETDEPS += $$shadowed($$PWD)/libAxq.so
+    else:macx:PRE_TARGETDEPS += $$shadowed($$PWD)/libAxq.dylib
+    else: error(Not defined)
+}
 
 win32:!win32-g++:DEFINES*=NOMINMAX #MSVC problem with std::min/max

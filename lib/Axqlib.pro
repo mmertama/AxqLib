@@ -9,7 +9,10 @@ QT       += quick concurrent
 
 TARGET = Axq
 TEMPLATE = lib
-#CONFIG += staticlib
+!dynlink:CONFIG += staticlib
+
+dynlink: message (Dynamic build)
+else: message(Static build)
 
 DEFINES += QT_DEPRECATED_WARNINGS
 DEFINES += AXQSHAREDLIB_LIBRARY
