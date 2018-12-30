@@ -1173,7 +1173,7 @@ T Stream::convert(const QVariant& val) {
     if(val.canConvert<T>()) {
         return val.value<T>();
     }
-    T item;
+    T item{};
     convertTo(item, val);
     return item;
 }
@@ -1183,7 +1183,7 @@ T Stream::convert(QVariant& val) {
     if(val.canConvert<T>()) {
         return val.value<T>();
     }
-    T item;
+    T item{};
     convertTo(item, val);
     return item;
 }
