@@ -9,7 +9,7 @@ QT       += quick concurrent
 
 TARGET = Axq
 TEMPLATE = lib
-!dynlink:CONFIG += staticlib
+#!dynlink:CONFIG += staticlib
 
 dynlink: message (Dynamic build)
 else: message(Static build)
@@ -51,4 +51,4 @@ INCLUDEPATH += inc
 
 OTHER_FILES += Axq.pri Axq.md
 
-CONFIG += c++11
+CONFIG += c++17

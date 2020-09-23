@@ -75,8 +75,10 @@ using enable_if_t = typename std::enable_if<B, T>::type;
 template< class T >
 using remove_pointer_t = typename std::remove_pointer<T>::type;
 #else
-using enable_if_t = std::enable_if_t;
-using remove_pointer_t = std::remove_pointer_t;
+template< bool B, class T = void >
+using enable_if_t= std::enable_if_t<B, T>;
+template< class T >
+using remove_pointer_t = std::remove_pointer_t<T>;
 #endif
 
 /// @cond
@@ -268,6 +270,7 @@ private:
     public:
         Waiter() = default;
         Waiter(const Waiter&) = default;
+        virtual void connected(const QMetaObject::Connection& connection) = 0;
         virtual void finished() = 0;
         virtual ~Waiter();
     };
@@ -462,9 +465,10 @@ public:
         Stream stream = std::get<0>(waiterTuple);
         Waiter* waiter = std::get<1>(waiterTuple);
         std::tie(stream, waiter) = waiterTuple;
-        QObject::connect(sender, signal, [waiter]() {
+        const auto connection = QObject::connect(sender, signal, [waiter] () {
             waiter->finished();
         });
+        waiter->connected(connection);
         return stream;
     }
 
@@ -752,7 +756,6 @@ public:
     void error(const char* err, int code = -1, bool isFatal = false) {
         makeError(convertFrom<QString>(err), code, isFatal);
     }
-
 
     Stream(StreamBase* ptr, const Stream& parent);
     Stream(ProducerBase* ptr);

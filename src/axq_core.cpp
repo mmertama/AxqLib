@@ -24,7 +24,7 @@ Stream::Stream() : Stream(nullptr) {
 }
 
 Stream::Stream(ProducerBase* ptr) : m_ptr(ptr) { /*, m_private(ptr)*/
-    if(!ptr->parent()) {
+    if(ptr && !ptr->parent()) {
         Q_ASSERT(!m_private);
         m_private.reset(ptr);
         new StreamPrivate(m_private);
@@ -366,11 +366,28 @@ std::tuple<Stream, Stream::Waiter*> Stream::createWait() {
     class WaiterImp : public Waiter {
     public:
         WaiterImp(Wait* w) : m_wait(w) {}
-        void finished() {
-            m_wait->unwait();
+        ~WaiterImp() {
+            if(m_wait)
+                m_wait->unwait();
+            if(m_connection) {
+                 QObject::disconnect(m_connection);
+            }
+        }
+        void finished() override {
+            if(m_wait) {
+                m_wait->unwait();
+                m_wait = nullptr;
+            }
+            if(m_connection)
+                QObject::disconnect(m_connection);
+        }
+        void connected(const QMetaObject::Connection& conn) override {
+            Q_ASSERT(!m_connection);
+            m_connection = conn;
         }
     private:
-        Wait* m_wait;
+        Wait* m_wait = nullptr;
+        QMetaObject::Connection m_connection;
     };
     auto wo = new WaiterImp(wait);
     own(wo);
