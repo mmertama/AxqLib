@@ -2,7 +2,8 @@ QT += quick network
 CONFIG += c++17
 DEFINES += QT_DEPRECATED_WARNINGS
 
-SOURCES += main.cpp
+SOURCES += main.cpp \
+    figmaimageprovider.cpp
 
 RESOURCES += qml.qrc
 
@@ -18,3 +19,6 @@ include(../../../lib/Axq.pri)
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+HEADERS += \
+    figmaimageprovider.h

@@ -707,6 +707,7 @@ public:
         });
     }
 
+    Stream onBufferCompleted(std::function <void (const QByteArray&)> last);
 
     /**
      * @function request

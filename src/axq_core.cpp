@@ -399,4 +399,12 @@ void Stream::applyParent(QObject* obj) {
     obj->setParent(owner);
 }
 
+Stream Stream::onBufferCompleted(std::function<void (const QByteArray &)> last) {
+    return createOnCompleted([last](const QVariant & v) {
+        QByteArray arr;
+        const auto p = convert<ParamList>(v);
+        std::for_each(p.begin(), p.end(), [&arr](const auto& v){arr += v.toByteArray();});
+        last(arr);
+    });
+}
 
